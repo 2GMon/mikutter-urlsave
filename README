@@ -1,0 +1,14 @@
+urlsave.rb
+Home Timelineに流れてきたURLを片っ端からInstapaperに追加します
+
+インストール方法
+まず，builder.patchをmikutter本体に当ててください．
+後はurlsave.rbをpluginディレクトリに放り込むだけです．
+
+設定
+ユーザー名とパスワード(設定している人のみ)を設定した後，
+URLsave起動にチェックを入れるだけです．
+チェックを外すとURLを追加するのをやめます．
+
+注意
+APIの制限とかはなんにも考えてないので自己責任でご利用ください
