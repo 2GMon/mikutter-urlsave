@@ -68,8 +68,8 @@ Plugin::create(:urlsave) do
     # API呼び出し
     def call_api(id, message, urls)
         urls.each do |u|
-            res = @https.post('/api/add', 'username=' + UserConfig[:minstapaper_user] +
-                              '&password=' + UserConfig[:minstapaper_pass] + '&url=' +
+            res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
+                              '&password=' + UserConfig[:urlsave_pass] + '&url=' +
                               CGI.escape(u) + '&selection=' + CGI.escape(message))
             if res.code != "201"
                 error_api(id, message, u, res.code)
