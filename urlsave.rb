@@ -7,7 +7,7 @@ miquire :addon, "settings"
 
 Plugin::create(:urlsave) do
     settings("URLsave") do
-        settings('Minstapaper') do
+        settings('URLsave') do
             input('ユーザー名', :urlsave_user)
             inputpass('パスワード', :urlsave_pass)
             boolean('URLsave起動', :urlsave_on)
