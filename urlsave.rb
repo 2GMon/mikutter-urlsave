@@ -96,21 +96,21 @@ Plugin::create(:urlsave) do
                                                    "Exceeded the rate limit.\n" +
                                                        "id : #{id}\n" +
                                                    "post : #{message}\n" +
-                                                   "url : #{urls}",
+                                                   "url : #{url}",
                                                    :system => true)])
         elsif res == "403"
             Plugin.call(:update, nil, [Message.new(:message =>
                                                    "Invalid username or password.\n" +
                                                        "id : #{id}\n" +
                                                    "post : #{message}\n" +
-                                                   "url : #{urls}",
+                                                   "url : #{url}",
                                                    :system => true)])
         else
             Plugin.call(:update, nil, [Message.new(:message =>
                                                    "The service encountered an error. Please try again later.\n" +
                                                        "id : #{id}\n" +
                                                    "post : #{message}\n" +
-                                                   "url : #{urls}",
+                                                   "url : #{url}",
                                                    :system => true)])
         end
     end
