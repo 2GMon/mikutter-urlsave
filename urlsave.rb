@@ -105,7 +105,7 @@ Plugin::create(:urlsave) do
         ignore_list.split("\n").each do |i|
             r = Regexp.new(i)
             if r =~ url
-                notify("Ignored!!\nurl : #{url}")
+#                notify("Ignored!!\nurl : #{url}")
                 return true
             end
         end
