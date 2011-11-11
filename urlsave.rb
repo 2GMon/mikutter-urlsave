@@ -86,38 +86,16 @@ Plugin::create(:urlsave) do
                 end
             end
         end
-=begin
-        Plugin.call(:update, nil, [Message.new(:message =>
-                                               "id : #{id}\n" +
-                                               "post : #{message}\n" +
-                                               "url : #{urls.join("\n")}",
-                                               :system => true)])
-=end
     end
 
     # APIエラー
     def error_api(id, message, url, res)
         if res == "400"
-            Plugin.call(:update, nil, [Message.new(:message =>
-                                                   "Exceeded the rate limit.\n" +
-                                                       "id : #{id}\n" +
-                                                   "post : #{message}\n" +
-                                                   "url : #{url}",
-                                                   :system => true)])
+            notify("Exceeded the rate limit.\nid : #{id}\npost : #{message}\nurl : #{url}")
         elsif res == "403"
-            Plugin.call(:update, nil, [Message.new(:message =>
-                                                   "Invalid username or password.\n" +
-                                                       "id : #{id}\n" +
-                                                   "post : #{message}\n" +
-                                                   "url : #{url}",
-                                                   :system => true)])
+            notify("Invalid username or password.\nid : #{id}\npost : #{message}\nurl : #{url}")
         else
-            Plugin.call(:update, nil, [Message.new(:message =>
-                                                   "The service encountered an error. Please try again later.\n" +
-                                                       "id : #{id}\n" +
-                                                   "post : #{message}\n" +
-                                                   "url : #{url}",
-                                                   :system => true)])
+            notify("The service encountered an error. Please try again later.\nid : #{id}\npost : #{message}\nurl : #{url}")
         end
     end
 
@@ -127,13 +105,14 @@ Plugin::create(:urlsave) do
         ignore_list.split("\n").each do |i|
             r = Regexp.new(i)
             if r =~ url
-                Plugin.call(:update, nil, [Message.new(:message =>
-                                                       "Ignored!!\n" +
-                                                       "url : #{url}",
-                                                       :system => true)])
+                notify("Ignored!!\nurl : #{url}")
                 return true
             end
         end
         return false
+    end
+
+    def notify(msg)
+        Plugin.call(:update, nil, [Message.new(:message => msg, :system => true)])
     end
 end
