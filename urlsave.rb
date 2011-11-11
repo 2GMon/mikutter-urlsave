@@ -7,10 +7,14 @@ miquire :addon, "settings"
 
 Plugin::create(:urlsave) do
     settings("URLsave") do
-        settings('URLsave') do
+        settings('基本設定') do
             input('ユーザー名', :urlsave_user)
             inputpass('パスワード', :urlsave_pass)
             boolean('URLsave起動', :urlsave_on)
+        end
+        settings("無視するURL") do
+            multitext('無視するURL', :urlsave_ignore).
+                tooltip('1行に一つrubyの正規表現で書く')
         end
     end
 
@@ -68,16 +72,18 @@ Plugin::create(:urlsave) do
     # API呼び出し
     def call_api(id, message, urls)
         urls.each do |u|
-            if !UserConfig[:urlsave_pass].empty?
-                res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                                  '&password=' + UserConfig[:urlsave_pass] + '&url=' +
-                                  CGI.escape(u) + '&selection=' + CGI.escape(message))
-            else
-                res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                                  '&url=' + CGI.escape(u) + '&selection=' + CGI.escape(message))
-            end
-            if res.code != "201"
-                error_api(id, message, u, res.code)
+            if !ignore?(u)
+                if !UserConfig[:urlsave_pass].empty?
+                    res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
+                                      '&password=' + UserConfig[:urlsave_pass] + '&url=' +
+                                      CGI.escape(u) + '&selection=' + CGI.escape(message))
+                else
+                    res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
+                                      '&url=' + CGI.escape(u) + '&selection=' + CGI.escape(message))
+                end
+                if res.code != "201"
+                    error_api(id, message, u, res.code)
+                end
             end
         end
 =begin
@@ -113,5 +119,21 @@ Plugin::create(:urlsave) do
                                                    "url : #{url}",
                                                    :system => true)])
         end
+    end
+
+    # 無視するURL?
+    def ignore?(url)
+        ignore_list = UserConfig[:urlsave_ignore]
+        ignore_list.split("\n").each do |i|
+            r = Regexp.new(i)
+            if r =~ url
+                Plugin.call(:update, nil, [Message.new(:message =>
+                                                       "Ignored!!\n" +
+                                                       "url : #{url}",
+                                                       :system => true)])
+                return true
+            end
+        end
+        return false
     end
 end
