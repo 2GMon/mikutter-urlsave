@@ -2,6 +2,7 @@
 # requrie 'date'
 require 'net/http'
 require 'cgi'
+require 'uri'
 miquire :core, "serialthread"
 miquire :addon, "settings"
 
@@ -102,6 +103,10 @@ Plugin::create(:urlsave) do
     # 無視するURL?
     def ignore?(url)
         ignore_list = UserConfig[:urlsave_ignore]
+        url = expand_url(url)
+        if url == "error"
+            return true
+        end
         ignore_list.split("\n").each do |i|
             r = Regexp.new(i)
             if r =~ url
@@ -114,5 +119,24 @@ Plugin::create(:urlsave) do
 
     def notify(msg)
         Plugin.call(:update, nil, [Message.new(:message => msg, :system => true)])
+    end
+
+    def expand_url(s)
+        loop do
+            uri = URI(s)
+            http = Net::HTTP.new(uri.host, uri.port)
+            begin
+                tmp = http.head(uri.request_uri)["Location"]
+            rescue Exception => exc
+                print "in expand_url : #{s} "
+                p exc
+                return "error"
+            end
+
+            if tmp == nil
+                return s
+            end
+            s = tmp
+        end
     end
 end
