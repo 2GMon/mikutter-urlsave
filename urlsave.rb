@@ -75,7 +75,11 @@ Plugin::create(:urlsave) do
             UserConfig[:urlsave_latest_id] = ent[:id].to_i
             urls = []
             ent[:entities][:urls].each do |u|
-                urls << u[:url]
+                if u[:expanded_url] != nil
+                    urls << u[:expanded_url]
+                else
+                    urls << u[:url]
+                end
             end
             urls.each do |u|
                 if !ignore?(u)
