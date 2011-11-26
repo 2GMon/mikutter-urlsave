@@ -23,7 +23,7 @@ Plugin::create(:urlsave) do
     @https = Net::HTTP.new('www.instapaper.com', 443)
     @https.use_ssl = true
     onupdate do |service, message|
-        @thread.new { instapaper(message) }
+        @thread.new { instapaper(message) if UserConfig[:urlsave_on]}
     end
 
     def instapaper(msg)
@@ -62,11 +62,9 @@ Plugin::create(:urlsave) do
             ent[:entities][:urls].each do |u|
                 urls << u[:url]
             end
-            if UserConfig[:urlsave_on]
-                urls.each do |u|
-                    if !ignore?(u)
-                        call_insta_api(ent[:id], ent[:message], u) if UserConfig[:urlsave_user]
-                    end
+            urls.each do |u|
+                if !ignore?(u)
+                    call_insta_api(ent[:id], ent[:message], u) if UserConfig[:urlsave_user]
                 end
             end
         end
