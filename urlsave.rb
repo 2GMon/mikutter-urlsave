@@ -60,11 +60,7 @@ Plugin::create(:urlsave) do
             UserConfig[:urlsave_latest_id] = ent[:id].to_i
             urls = []
             ent[:entities][:urls].each do |u|
-                if u[:expanded_url] != nil
-                    urls << u[:expanded_url]
-                else
-                    urls << u[:url]
-                end
+                urls << u[:url]
             end
             call_api(ent[:id], ent[:message], urls) if UserConfig[:urlsave_on] && UserConfig[:urlsave_user]
         end
