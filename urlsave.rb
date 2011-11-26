@@ -100,7 +100,7 @@ Plugin::create(:urlsave) do
     def ignore?(url)
         ignore_list = UserConfig[:urlsave_ignore]
         url = expand_url(url)
-        if url == "error"
+        if url == false
             return true
         end
         ignore_list.split("\n").each do |i|
@@ -119,14 +119,20 @@ Plugin::create(:urlsave) do
 
     def expand_url(s)
         loop do
-            uri = URI(s)
+            begin
+                uri = URI(s)
+            rescue Exception => exc
+                print "in expand_url : URI(#{s}) "
+                p exc
+                return false
+            end
             http = Net::HTTP.new(uri.host, uri.port)
             begin
                 tmp = http.head(uri.request_uri)["Location"]
             rescue Exception => exc
-                print "in expand_url : #{s} "
+                print "in expand_url : http.head(#{s}) "
                 p exc
-                return "error"
+                return false
             end
 
             if tmp == nil
