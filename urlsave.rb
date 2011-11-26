@@ -81,12 +81,12 @@ Plugin::create(:urlsave) do
                               '&url=' + CGI.escape(url) + '&selection=' + CGI.escape(message))
         end
         if res.code != "201"
-            error_api(id, message, url, res.code)
+            error_insta_api(id, message, url, res.code)
         end
     end
 
-    # APIエラー
-    def error_api(id, message, url, res)
+    # Instapaper APIエラー
+    def error_insta_api(id, message, url, res)
         if res == "400"
             notify("Exceeded the rate limit.\nid : #{id}\npost : #{message}\nurl : #{url}")
         elsif res == "403"
