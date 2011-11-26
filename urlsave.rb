@@ -51,7 +51,7 @@ Plugin::create(:urlsave) do
         result
     end
 
-    # InstapaperにURLを追加する
+    # URLを追加する
     def add_url(ent)
         if !UserConfig[:urlsave_latest_id].to_i
             UserConfig[:urlsave_latest_id] = ent[:id].to_i
@@ -62,26 +62,28 @@ Plugin::create(:urlsave) do
             ent[:entities][:urls].each do |u|
                 urls << u[:url]
             end
-            call_api(ent[:id], ent[:message], urls) if UserConfig[:urlsave_on] && UserConfig[:urlsave_user]
+            if UserConfig[:urlsave_on]
+                urls.each do |u|
+                    if !ignore?(u)
+                        call_insta_api(ent[:id], ent[:message], u) if UserConfig[:urlsave_user]
+                    end
+                end
+            end
         end
     end
 
-    # API呼び出し
-    def call_api(id, message, urls)
-        urls.each do |u|
-            if !ignore?(u)
-                if !UserConfig[:urlsave_pass].empty?
-                    res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                                      '&password=' + UserConfig[:urlsave_pass] + '&url=' +
-                                      CGI.escape(u) + '&selection=' + CGI.escape(message))
-                else
-                    res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                                      '&url=' + CGI.escape(u) + '&selection=' + CGI.escape(message))
-                end
-                if res.code != "201"
-                    error_api(id, message, u, res.code)
-                end
-            end
+    # InstapaperAPI呼び出し
+    def call_insta_api(id, message, url)
+        if !UserConfig[:urlsave_pass].empty?
+            res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
+                              '&password=' + UserConfig[:urlsave_pass] + '&url=' +
+                              CGI.escape(url) + '&selection=' + CGI.escape(message))
+        else
+            res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
+                              '&url=' + CGI.escape(url) + '&selection=' + CGI.escape(message))
+        end
+        if res.code != "201"
+            error_api(id, message, url, res.code)
         end
     end
 
