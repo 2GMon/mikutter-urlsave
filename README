@@ -1,9 +1,12 @@
 urlsave.rb
-Home Timelineに流れてきたURLを片っ端からInstapaperに追加します
+Home Timelineに流れてきたURLを片っ端からInstapaper or/and Read it Laterに追加します
 
 インストール方法
 まず，builder.patchをmikutter本体に当ててください．
+mikutterにパッチが取り込まれたのでrev.601以降はパッチ当ての必要はありません．
 後はurlsave.rbをpluginディレクトリに放り込むだけです．
+
+標準jsonライブラリを利用しているため，ruby 1.9じゃないと動かないと思います．
 
 設定
 ユーザー名とパスワード(設定している人のみ)を設定した後，

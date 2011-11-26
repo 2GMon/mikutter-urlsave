@@ -3,15 +3,22 @@
 require 'net/http'
 require 'cgi'
 require 'uri'
+require 'json'
 miquire :core, "serialthread"
 miquire :addon, "settings"
 
 Plugin::create(:urlsave) do
     settings("URLsave") do
         settings('基本設定') do
-            input('ユーザー名', :urlsave_user)
-            inputpass('パスワード', :urlsave_pass)
             boolean('URLsave起動', :urlsave_on)
+            settings('Instapaper') do
+                input('ユーザー名', :urlsave_user)
+                inputpass('パスワード', :urlsave_pass)
+            end
+            settings('Read it Later') do
+                input('ユーザー名', :urlsave_ril_user)
+                inputpass('パスワード', :urlsave_ril_pass)
+            end
         end
         settings("無視するURL") do
             multitext('無視するURL', :urlsave_ignore).
@@ -19,11 +26,19 @@ Plugin::create(:urlsave) do
         end
     end
 
+    URLSAVE_RIL_API_KEY = 'c34p3R61A6d5ee19bTg4fI1UbydIzi87'
     @thread = SerialThreadGroup.new
     @https = Net::HTTP.new('www.instapaper.com', 443)
     @https.use_ssl = true
+    @https_ril = Net::HTTP.new('readitlaterlist.com', 443)
+    @https_ril.use_ssl = true
+    @urls_ril = []
     onupdate do |service, message|
         @thread.new { instapaper(message) if UserConfig[:urlsave_on]}
+    end
+
+    onperiod do |service|
+        call_ril_api()
     end
 
     def instapaper(msg)
@@ -64,7 +79,8 @@ Plugin::create(:urlsave) do
             end
             urls.each do |u|
                 if !ignore?(u)
-                    call_insta_api(ent[:id], ent[:message], u) if UserConfig[:urlsave_user]
+                    call_insta_api(ent[:id], ent[:message], u) if !UserConfig[:urlsave_user].empty?
+                    add_url_ril(ent[:id], u) if !UserConfig[:urlsave_ril_user].empty?
                 end
             end
         end
@@ -85,6 +101,32 @@ Plugin::create(:urlsave) do
         end
     end
 
+    # Read it Later 登録予定リストにURL追加
+    def add_url_ril(id, url)
+        tmp = [id, url]
+        @urls_ril << tmp
+    end
+
+    # Read it Later API呼び出し
+    def call_ril_api()
+        i = 0
+        tmp_json = {}
+        while 0 < @urls_ril.length
+            url = @urls_ril.shift
+            tmp = {"url" => "#{url[1]}", "ref_id" => "#{url[0]}"}
+            tmp_json["#{i}"] = tmp
+            i += 1
+        end
+        if i > 0
+            res = @https_ril.post('/v2/send', 'username=' + UserConfig[:urlsave_ril_user] +
+                              '&password=' + UserConfig[:urlsave_ril_pass] + '&apikey=' +
+                              URLSAVE_RIL_API_KEY + '&new=' + tmp_json.to_json)
+            if res.code != "200"
+                error_ril_api(res.code)
+            end
+        end
+    end
+
     # Instapaper APIエラー
     def error_insta_api(id, message, url, res)
         if res == "400"
@@ -93,6 +135,21 @@ Plugin::create(:urlsave) do
             notify("Invalid username or password.\nid : #{id}\npost : #{message}\nurl : #{url}")
         else
             notify("The service encountered an error. Please try again later.\nid : #{id}\npost : #{message}\nurl : #{url}")
+        end
+    end
+
+    # Read it Later APIエラー
+    def error_ril_api(res)
+        if res == "400"
+            notify("Invalid request.")
+        elsif res == "401"
+            notify("Username and/or password is incorrect.")
+        elsif res == "403"
+            notify("Rate limit exceeded.")
+        elsif res == "503"
+            notify("Read It Later's sync server is down for scheduled maintenance.")
+        else
+            notify("Unknown Error! respons code = #{res}")
         end
     end
 
