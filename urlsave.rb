@@ -118,7 +118,7 @@ Plugin::create(:urlsave) do
         tmp_json = {}
         while 0 < @urls_ril.length
             url = @urls_ril.shift
-            tmp = {"url" => "#{url[1]}", "ref_id" => "#{url[0]}"}
+            tmp = {"url" => "#{CGI.escape(url[1])}", "ref_id" => "#{url[0]}"}
             tmp_json["#{i}"] = tmp
             i += 1
         end
