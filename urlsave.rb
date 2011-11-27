@@ -82,9 +82,10 @@ Plugin::create(:urlsave) do
                 end
             end
             urls.each do |u|
-                if !ignore?(u)
-                    call_insta_api(ent[:id], ent[:message], u) if !UserConfig[:urlsave_user].empty?
-                    add_url_ril(ent[:id], u) if !UserConfig[:urlsave_ril_user].empty?
+                url = ignore?(u)
+                if url != true
+                    call_insta_api(ent[:id], ent[:message], url) if !UserConfig[:urlsave_user].empty?
+                    add_url_ril(ent[:id], url) if !UserConfig[:urlsave_ril_user].empty?
                 end
             end
         end
@@ -171,7 +172,7 @@ Plugin::create(:urlsave) do
                 return true
             end
         end
-        return false
+        return url
     end
 
     def notify(msg)
