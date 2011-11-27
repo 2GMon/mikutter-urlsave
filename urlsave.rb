@@ -4,6 +4,7 @@ require 'net/http'
 require 'cgi'
 require 'uri'
 require 'json'
+require 'kconv'
 miquire :core, "serialthread"
 miquire :addon, "settings"
 
@@ -84,22 +85,25 @@ Plugin::create(:urlsave) do
             urls.each do |u|
                 url = ignore?(u)
                 if url != true
-                    call_insta_api(ent[:id], ent[:message], url) if !UserConfig[:urlsave_user].empty?
-                    add_url_ril(ent[:id], url) if !UserConfig[:urlsave_ril_user].empty?
+                    title = get_title(url)
+                    call_insta_api(ent[:id], ent[:message], url, title) if !UserConfig[:urlsave_user].empty?
+                    add_url_ril(ent[:id], url, title) if !UserConfig[:urlsave_ril_user].empty?
                 end
             end
         end
     end
 
     # InstapaperAPI呼び出し
-    def call_insta_api(id, message, url)
+    def call_insta_api(id, message, url, title)
         if !UserConfig[:urlsave_pass].empty?
             res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
                               '&password=' + UserConfig[:urlsave_pass] + '&url=' +
-                              CGI.escape(url) + '&selection=' + CGI.escape(message))
+                              CGI.escape(url) + '&selection=' + CGI.escape(message) +
+                             '&title=' + CGI.escape(title))
         else
             res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                              '&url=' + CGI.escape(url) + '&selection=' + CGI.escape(message))
+                              '&url=' + CGI.escape(url) + '&selection=' + CGI.escape(message) +
+                             '&title=' + CGI.escape(title))
         end
         if res.code != "201"
             error_insta_api(id, message, url, res.code)
@@ -107,8 +111,8 @@ Plugin::create(:urlsave) do
     end
 
     # Read it Later 登録予定リストにURL追加
-    def add_url_ril(id, url)
-        tmp = [id, url]
+    def add_url_ril(id, url, title)
+        tmp = [id, url, title]
         @urls_ril << tmp
     end
 
@@ -118,7 +122,7 @@ Plugin::create(:urlsave) do
         tmp_json = {}
         while 0 < @urls_ril.length
             url = @urls_ril.shift
-            tmp = {"url" => "#{CGI.escape(url[1])}", "ref_id" => "#{url[0]}"}
+            tmp = {"url" => "#{CGI.escape(url[1])}", "title" => "#{CGI.escape(url[2])}", "ref_id" => "#{url[0]}"}
             tmp_json["#{i}"] = tmp
             i += 1
         end
@@ -202,5 +206,18 @@ Plugin::create(:urlsave) do
             end
             s = tmp
         end
+    end
+
+    def get_title(url)
+        uri = URI(url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        begin
+            title = http.get(uri.request_uri).body.toutf8.scan(/<title>(.*)<\/title>/)[0][0]
+        rescue EXception => exc
+            print "in get_title : http.get(#{url})"
+            p exc
+            return nil
+        end
+        return title
     end
 end
