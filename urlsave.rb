@@ -45,51 +45,38 @@ Plugin::create(:urlsave) do
     def instapaper(msg)
         if !msg.empty?
             msg.each do |m|
-                get_url_message_entity(m).each do |e|
-                    add_url(e)
+                get_urls_hash(m).each do |u|
+                    add_url(u)
                 end
             end
         end
     end
 
-    # URLが含まれるentityをとってるつもり
-    # 誰がかっこいいメソッド名考えて
-    def get_url_message_entity(msg)
-        entity = msg.links.to_a
+    # Messageに含まれるURLの配列
+    def get_urls_hash(msg)
+        # 最新のツイートidが設定されていない場合
+        if !UserConfig[:urlsave_latest_id].to_i
+            UserConfig[:urlsave_latest_id] = msg[:id].to_i
+        end
         result = []
-        if entity.length != 0
-            entity.each do |e|
-                if e[:slug] == :urls
-                    result << e[:message]
-                end
+        if msg[:id].to_i > UserConfig[:urlsave_latest_id].to_i && !msg.from_me?
+            UserConfig[:urlsave_latest_id] = msg[:id].to_i
+            entity = msg[:entities]
+            entity[:urls].each do |urls|
+                tmp = {"id" => msg[:id], "message" => msg.body, "url" => urls[:expanded_url]}
+                result << tmp
             end
         end
         result
     end
 
     # URLを追加する
-    def add_url(ent)
-        if !UserConfig[:urlsave_latest_id].to_i
-            UserConfig[:urlsave_latest_id] = ent[:id].to_i
-        end
-        if ent[:id].to_i > UserConfig[:urlsave_latest_id].to_i
-            UserConfig[:urlsave_latest_id] = ent[:id].to_i
-            urls = []
-            ent[:entities][:urls].each do |u|
-                if u[:expanded_url] != nil
-                    urls << u[:expanded_url]
-                else
-                    urls << u[:url]
-                end
-            end
-            urls.each do |u|
-                url = ignore?(u)
-                if url != true
-                    title = get_title(url)
-                    call_insta_api(ent[:id], ent[:message], url, title) if !UserConfig[:urlsave_user].empty?
-                    add_url_ril(ent[:id], url, title) if !UserConfig[:urlsave_ril_user].empty?
-                end
-            end
+    def add_url(url_hash)
+        url = ignore?(url_hash["url"])
+        if url != true
+            title = get_title(url)
+            call_insta_api(url_hash["id"], url_hash["message"], url, title) if !UserConfig[:urlsave_user].empty?
+            add_url_ril(url_hash["id"], url, title) if !UserConfig[:urlsave_ril_user].empty?
         end
     end
 
