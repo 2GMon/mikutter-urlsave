@@ -95,16 +95,11 @@ Plugin::create(:urlsave) do
 
     # InstapaperAPI呼び出し
     def call_insta_api(id, message, url, title)
-        if !UserConfig[:urlsave_pass].empty?
-            res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                              '&password=' + UserConfig[:urlsave_pass] + '&url=' +
-                              CGI.escape(url) + '&selection=' + CGI.escape(message) +
-                             '&title=' + CGI.escape(title))
-        else
-            res = @https.post('/api/add', 'username=' + UserConfig[:urlsave_user] +
-                              '&url=' + CGI.escape(url) + '&selection=' + CGI.escape(message) +
-                             '&title=' + CGI.escape(title))
-        end
+        prm = "username=" + UserConfig[:urlsave_user] + "&url=" + CGI.escape(url) +
+            "&selection=" + CGI.escape(message)
+        prm = prm + "&title=" + CGI.escape(title) if title != nil
+        prm = prm + "&password=" + UserConfig[:urlsave_pass] if !UserConfig[:urlsave_pass].empty?
+        res = @https.post('/api/add', prm)
         if res.code != "201"
             error_insta_api(id, message, url, res.code)
         end
@@ -122,7 +117,11 @@ Plugin::create(:urlsave) do
         tmp_json = {}
         while 0 < @urls_ril.length
             url = @urls_ril.shift
-            tmp = {"url" => "#{CGI.escape(url[1])}", "title" => "#{CGI.escape(url[2])}", "ref_id" => "#{url[0]}"}
+            if url[2] != nil
+                tmp = {"url" => "#{CGI.escape(url[1])}", "title" => "#{CGI.escape(url[2])}", "ref_id" => "#{url[0]}"}
+            else
+                tmp = {"url" => "#{CGI.escape(url[1])}", "ref_id" => "#{url[0]}"}
+            end
             tmp_json["#{i}"] = tmp
             i += 1
         end
@@ -212,12 +211,16 @@ Plugin::create(:urlsave) do
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)
         begin
-            title = http.get(uri.request_uri).body.toutf8.scan(/<title>(.*)<\/title>/)[0][0]
-        rescue EXception => exc
+            title = http.get(uri.request_uri).body.toutf8.scan(/<title>(.*)<\/title>/)
+        rescue Exception => exc
             print "in get_title : http.get(#{url})"
             p exc
             return nil
         end
-        return title
+        if title.length > 0
+            return title[0][0]
+        else
+            return nil
+        end
     end
 end
