@@ -197,6 +197,7 @@ Plugin::create(:urlsave) do
     def get_title(url)
         uri = URI(url)
         http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true if /^https/ =~ url
         begin
             title = http.get(uri.request_uri).body.toutf8.scan(/<title>(.*)<\/title>/)
         rescue Exception => exc
