@@ -155,6 +155,9 @@ Plugin::create(:urlsave) do
         if url == false
             return true
         end
+        if ignore_list == nil
+            return url
+        end
         ignore_list.split("\n").each do |i|
             r = Regexp.new(i)
             if r =~ url
