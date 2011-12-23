@@ -20,6 +20,10 @@ Plugin::create(:urlsave) do
                 input('ユーザー名', :urlsave_ril_user)
                 inputpass('パスワード', :urlsave_ril_pass)
             end
+            settings('Postpone') do
+                input('ユーザー名', :urlsave_postpone_user)
+                inputpass('パスワード', :urlsave_postpone_pass)
+            end
         end
         settings("無視するURL") do
             multitext('無視するURL', :urlsave_ignore).
@@ -34,6 +38,7 @@ Plugin::create(:urlsave) do
     @https_ril = Net::HTTP.new('readitlaterlist.com', 443)
     @https_ril.use_ssl = true
     @urls_ril = []
+    @http_postpone = Net::HTTP.new('postpone.herokuapp.com', 80)
     onupdate do |service, message|
         @thread.new { urlsave(message) if UserConfig[:urlsave_on]}
     end
@@ -77,6 +82,7 @@ Plugin::create(:urlsave) do
             title = get_title(url)
             call_insta_api(url_hash["id"], url_hash["message"], url, title) if !UserConfig[:urlsave_user].empty?
             add_url_ril(url_hash["id"], url, title) if !UserConfig[:urlsave_ril_user].empty?
+            call_postpone_api(url_hash["id"], url_hash["message"], url, title) if !UserConfig[:urlsave_postpone_user].empty?
         end
     end
 
@@ -122,6 +128,18 @@ Plugin::create(:urlsave) do
         end
     end
 
+    # PostponeAPI呼び出し
+    def call_postpone_api(id, message, url, title)
+        prm = "email=" + UserConfig[:urlsave_postpone_user] + "&url=" + CGI.escape(url) +
+            "&description=" + CGI.escape(message)
+        prm = prm + "&title=" + CGI.escape(title) if title != nil
+        prm = prm + "&password=" + UserConfig[:urlsave_postpone_pass]
+        res = @http_postpone.post('/api/add', prm)
+        if res.code != "201"
+            error_postpone_api(id, message, url, res.code)
+        end
+    end
+
     # Instapaper APIエラー
     def error_insta_api(id, message, url, res)
         if res == "400"
@@ -145,6 +163,15 @@ Plugin::create(:urlsave) do
             notify("Read It Later's sync server is down for scheduled maintenance.")
         else
             notify("Unknown Error! respons code = #{res}")
+        end
+    end
+
+    # Postpone APIエラー
+    def error_postpone_api(id, message, url, res)
+        if res == "400"
+            notify("Bad request\nid : #{id}\npost : #{message}\nurl : #{url}")
+        elsif res == "403"
+            notify("Invalid email or password\nid : #{id}\npost : #{message}\nurl : #{url}")
         end
     end
 
