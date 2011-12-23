@@ -35,14 +35,14 @@ Plugin::create(:urlsave) do
     @https_ril.use_ssl = true
     @urls_ril = []
     onupdate do |service, message|
-        @thread.new { instapaper(message) if UserConfig[:urlsave_on]}
+        @thread.new { urlsave(message) if UserConfig[:urlsave_on]}
     end
 
     onperiod do |service|
         call_ril_api()
     end
 
-    def instapaper(msg)
+    def urlsave(msg)
         if !msg.empty?
             msg.each do |m|
                 get_urls_hash(m).each do |u|
