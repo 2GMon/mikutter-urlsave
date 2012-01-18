@@ -5,8 +5,6 @@ require 'cgi'
 require 'uri'
 require 'json'
 require 'kconv'
-miquire :core, "serialthread"
-miquire :addon, "settings"
 
 Plugin::create(:urlsave) do
     settings("URLsave") do
