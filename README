@@ -1,6 +1,6 @@
 urlsave.rb
 Home Timelineに流れてきたURLを片っ端からInstapaper or/and Read it Laterに追加します
-(11/12/23) 自分用に作ったサービス[Postpone](http://postpone.herokuapp.com/)にも対応しました
+(11/12/23) 自分用に作ったサービスPostpone ( http://postpone.herokuapp.com/ ) にも対応しました
 
 インストール方法
 まず，builder.patchをmikutter本体に当ててください．
